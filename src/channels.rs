@@ -25,7 +25,7 @@ use tokio::sync::oneshot::Sender;
 use crate::{
     broker::ServiceBroker,
     config,
-    config::{Channel, Config, Transporter},
+    config::{Channel, Config, Transporter, NatsAuth},
     nats,
 };
 
@@ -106,9 +106,10 @@ impl ChannelSupervisor {
         let channels = Channel::build_hashmap(&config);
 
         let conn = match &config.transporter {
-            Transporter::Nats(nats_address) => nats::Conn::new(nats_address)
-                .await
-                .expect("NATS should connect"),
+            Transporter::Nats{ url, options } => match &options.auth {
+                NatsAuth::None => nats::Conn::new(url).await,
+                NatsAuth::UserPass { user, pass } => nats::Conn::new_with_user_pass(url, user, pass).await
+            }.expect("NATS should connect"),
         };
 
         Self {

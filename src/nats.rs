@@ -25,6 +25,14 @@ impl Conn {
 
         Ok(Conn { conn })
     }
+    pub(crate) async fn new_with_user_pass(nats_address: &str, user: &str, pass: &str) -> Result<Conn> {
+        let conn = async_nats::Options::with_user_pass(user, pass)
+            .connect(nats_address)
+            .await
+            .map_err(Error::UnableToConnect)?;
+
+        Ok(Conn { conn })
+    }
 
     pub(crate) async fn send(&self, channel: &str, message: Vec<u8>) -> Result<()> {
         let mut retries: i8 = 0;

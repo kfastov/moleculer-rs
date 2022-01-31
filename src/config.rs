@@ -89,14 +89,52 @@ pub enum Logger {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum Transporter {
-    Nats(String),
+    Nats {
+        url: String,
+        options: NatsOptions,
+    },
+}
+
+#[derive(Serialize, Deserialize, Debug, Default)]
+pub struct NatsOptions {
+    pub auth: NatsAuth,
+}
+
+impl NatsOptions {
+    pub fn with_user_pass<S: Into<String>>(user: S, pass: S) -> Self {
+        let user = user.into();
+        let pass = pass.into();
+        NatsOptions {
+            auth: NatsAuth::UserPass { user, pass }
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub enum NatsAuth {
+    None,
+    UserPass { user: String, pass: String },
+}
+
+impl Default for NatsAuth {
+    fn default() -> Self {
+        NatsAuth::None
+    }
 }
 
 impl Transporter {
     /// Create a NATS transporter with address, ex:
     /// `Transporter::nats("nats://localhost:4222")`
     pub fn nats<S: Into<String>>(nats_address: S) -> Self {
-        Self::Nats(nats_address.into())
+        Self::nats_with_options(nats_address, NatsOptions::default())
+    }
+    /// Create a NATS transporter with address and options, ex:
+    /// `Transporter::nats("nats://localhost:4222", NatsOptions::default())`
+    pub fn nats_with_options<S: Into<String>>(nats_address: S, options: NatsOptions) -> Self {
+        Self::Nats {
+            url: nats_address.into(),
+            options: options,
+        }
     }
 }
 
